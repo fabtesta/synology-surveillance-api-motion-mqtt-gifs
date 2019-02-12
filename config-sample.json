@@ -1,0 +1,27 @@
+{
+  "mqtt_server": "broker.shiftr.io",
+  "mqtt_port": 1883,
+  "mqtt_user": "user",
+  "mqtt_pwd": "password",
+  "mqtt_base_topic": "synology/cameras/gifs",
+  "ffmpeg_working_folder": "./gifs",
+  "synology_base_api_url": "http://127.0.0.1",
+  "synology_user": "admin",
+  "synology_password": "password123",
+  "synology_cameras": [
+    {
+      "id": 1,
+      "skip_first_n_secs": 5,
+      "max_length_secs": 5,
+      "scale": 320,
+      "topic_name": "camera_1"
+    },
+    {
+      "id": 2,
+      "skip_first_n_secs": 7,
+      "max_length_secs": 10,
+      "scale": 640,
+      "topic_name": "camera_2"
+    }
+  ]
+}
