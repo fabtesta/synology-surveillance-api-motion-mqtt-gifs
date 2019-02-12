@@ -141,7 +141,7 @@ class CameraMotionEventHandler:
             self.publish_mqtt_message(gif, self.camera.topic_name)
 
     def publish_mqtt_message(self, gif):
-        logging.info('publish_mqtt_message gif %s mqtt_server %s mqtt_port %i mqtt_base_topic %s topic_name %s',
+        logging.info('publish_mqtt_message gif mqtt_server %s  mqtt_port %i mqtt_base_topic %s topic_name %s',
                      self.config["mqtt_server"], self.config["mqtt_port"], self.config["mqtt_base_topic"],
                      self.camera["topic_name"])
 

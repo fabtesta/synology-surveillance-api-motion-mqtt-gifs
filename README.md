@@ -1,7 +1,7 @@
 # synology-surveillance-api-motion-mqtt-gifs
 A python script to create animated gifs from videos recorded by cameras attached to Synology Surveillance Station inspired by similar project for [Ubiquiti Unifi camers](https://github.com/selfhostedhome/unifi-video-gif-mqtt) [(blog)](https://selfhostedhome.com/unifi-video-motion-detection-gif-notifications)
 
-Supports DSM Surveillance APIs from version 2.
+Supports [Synology Surveillance APIs version 2](https://global.download.synology.com/download/Document/DeveloperGuide/Surveillance_Station_Web_API_v2.0.pdf).
 
 Supports multiple cameras polling and ffmpeg parameters
 
