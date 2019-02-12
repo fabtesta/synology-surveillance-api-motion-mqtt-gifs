@@ -75,7 +75,7 @@ There is a docker image if you prefer to run using docker. For example:
 
 ```shell
 docker run -v $(pwd)/config:/config \
-    -v /tmp/gifs:gifs \
+    -v $(pwd)/gifs:/gifs \
     fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
 ```
 
@@ -86,8 +86,8 @@ services:
   synology-surveillance-api-motion-mqtt-gifs:
     image: fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
     volumes:
-      - ./config/unifi-video-gif-mqtt:/config
-      - /tmp/gifs:/gifs
+      - ./config:/config
+      - ./gifs:/gifs
     restart: unless-stopped
 ```
 

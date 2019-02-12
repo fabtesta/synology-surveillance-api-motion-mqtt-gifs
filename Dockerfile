@@ -2,6 +2,7 @@ FROM jrottenberg/ffmpeg:4.0
 
 ADD synology_surveillance_motion_mqtt_gifs.py requirements.txt /
 VOLUME /config
+VOLUME /gifs
 
 RUN apt-get update && \
   apt-get install -y python3 python3-pip && \
