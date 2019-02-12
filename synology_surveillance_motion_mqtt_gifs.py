@@ -13,8 +13,8 @@ from pathlib import Path
 import paho.mqtt.client as mqtt
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    )
+                    format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 # SYNO.API urls
 synoApiLoginUrl = "{}/webapi/auth.cgi?api=SYNO.API.Auth&method=Login&version=2" \
