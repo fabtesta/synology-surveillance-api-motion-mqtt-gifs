@@ -38,7 +38,7 @@ def syno_login(base_url, user, password):
     logging.info('login_response status_code %s', login_response.status_code)
 
     if login_response.ok:
-        login_data = json.loads(login_response.content)
+        login_data = json.loads(login_response.content.decode('utf-8'))
         if login_data["success"]:
             logging.info('login_response got sinotoken %s', login_data["data"]["sid"])
             return login_data["data"]["sid"]
@@ -54,7 +54,7 @@ def syno_info(base_url, sid):
     logging.info('info_response status_code %s', info_response.status_code)
 
     if info_response.ok:
-        info_data = json.loads(info_response.content)
+        info_data = json.loads(info_response.content.decode('utf-8'))
         return info_data
 
     else:
@@ -67,7 +67,7 @@ def syno_last_event(base_url, camera_id, sid):
     logging.info('event_response status_code %s', event_response.status_code)
 
     if event_response.ok:
-        event_data = json.loads(event_response.content)
+        event_data = json.loads(event_response.content.decode('utf-8'))
         if event_data["data"]["events"][0]["cameraId"] == camera_id:
             logging.info('found event for camera %s', event_data["data"]["events"][0]["camera_name"])
             return event_data["data"]["events"][0]["eventId"]
