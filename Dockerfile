@@ -3,6 +3,7 @@ FROM jrottenberg/ffmpeg:4.1-alpine
 ADD synology_surveillance_motion_mqtt_gifs.py requirements.txt /
 VOLUME /config
 VOLUME /gifs
+VOLUME /data
 
 ENV PATH /usr/local/bin:$PATH
 ENV LANG C.UTF-8

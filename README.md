@@ -4,6 +4,7 @@ A python script to create animated gifs from videos recorded by cameras attached
 Supports [Synology Surveillance APIs version 2](https://global.download.synology.com/download/Document/DeveloperGuide/Surveillance_Station_Web_API_v2.0.pdf).
 
 Supports multiple cameras polling and ffmpeg parameters
+Remembers already processed events across restarts.
 
 ## Config File
 
@@ -13,6 +14,7 @@ For example:
 
 ```json
 {
+  "data_folder": "./data", // <-- Leave it empty if you are using docker image
   "mqtt_server": "broker.shiftr.io",
   "mqtt_port": 1883,
   "mqtt_user": "user",
@@ -41,6 +43,7 @@ For example:
 }
 
 ```
+* `data_folder`: Path where to stored sqlite db for already processed events (preserve state across restarts). Leave empty if using docker image.
 * `mqtt_server`: MQTT server to publish notifications to
 * `mqtt_port`: Port of MQTT server
 * `mqtt_user`: Username of MQTT server
@@ -74,21 +77,38 @@ Example:
 There is a docker image if you prefer to run using docker. For example:
 
 ```shell
-docker run -v $(pwd)/config:/config \
+docker run \
+    -v $(pwd)/config:/config \
+    -v $(pwd)/data:/data/processed_events.db \
     -v $(pwd)/gifs:/gifs \
     fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
 ```
 
 or via docker compose.
-
+######(bind-mount)
 ```yaml
 services:
   synology-surveillance-api-motion-mqtt-gifs:
     image: fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
     volumes:
       - ./config:/config
+      - ./data:/data
       - ./gifs:/gifs
     restart: unless-stopped
+```
+######(persistent volume)
+```yaml - 
+services:
+  synology-surveillance-api-motion-mqtt-gifs:
+    image: fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
+    volumes:
+      - ./config:/config
+      - syno_data:/data
+      - ./gifs:/gifs
+    restart: unless-stopped
+    
+volumes:
+  syno_data:
 ```
 
 If you'd prefer to install dependencies yourself, you'll need:
