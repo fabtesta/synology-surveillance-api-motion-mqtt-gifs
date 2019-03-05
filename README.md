@@ -79,7 +79,7 @@ There is a docker image if you prefer to run using docker. For example:
 ```shell
 docker run \
     -v $(pwd)/config:/config \
-    -v $(pwd)/data:/data/processed_events.db \
+    -v $(pwd)/data:/data \
     -v $(pwd)/gifs:/gifs \
     fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
 ```
