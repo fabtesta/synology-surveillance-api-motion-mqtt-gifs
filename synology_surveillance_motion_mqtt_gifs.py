@@ -45,7 +45,7 @@ def parse_config(config_path):
 
 def create_connection(data_folder):
     try:
-        conn = sqlite3.connect(data_folder+'/processed_events.db')
+        conn = sqlite3.connect(data_folder + '/processed_events.db')
         print(sqlite3.version)
         return conn
     except Error as e:
@@ -122,7 +122,7 @@ def syno_last_event(base_url, camera_id, sid):
 
     if event_response.ok:
         event_data = json.loads(event_response.content.decode('utf-8'))
-        if event_data["data"]["events"][0]["cameraId"] == camera_id:
+        if len(event_data["data"]["events"]) > 0 and event_data["data"]["events"][0]["cameraId"] == camera_id:
             logging.info('found event for camera %s', event_data["data"]["events"][0]["camera_name"])
             return event_data["data"]["events"][0]["eventId"]
         else:
