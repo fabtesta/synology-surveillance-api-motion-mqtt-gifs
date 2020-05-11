@@ -6,7 +6,7 @@ Supports [Synology Surveillance APIs version 2](https://global.download.synology
 Supports multiple cameras polling and ffmpeg parameters
 Remembers already processed events across restarts.
 
-## This docker image as passed 10k downloads on Docker Hub!
+## This docker image has passed 10k downloads on Docker Hub!
 <a href="https://www.buymeacoffee.com/fabtesta" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/lato-blue.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
 
 ## Config File
