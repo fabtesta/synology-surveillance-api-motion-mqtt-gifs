@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # SYNO.API urls
-synoApiLoginUrl = "{}/webapi/auth.cgi?api=SYNO.API.Auth&method=Login&version=2" \
-                  "&session=SurveillanceStation&format=sid&account={}&passwd={}"
+synoApiLoginUrl = "{}/webapi/auth.cgi?api=SYNO.API.Auth&method=login&version=6" \
+                  "&session=SurveillanceStation&format=cookie&account={}&passwd={}"
 synoApiCamerasInfoUrl = "{}/webapi/entry.cgi?api=SYNO.SurveillanceStation.Camera&method=List&version=1&_sid={}"
 synoApiEventQueryUrl = "{}/webapi/entry.cgi?api=SYNO.SurveillanceStation.Event&method=List" \
                        "&version=4&locked=0&reason=2&limit=1&cameraIds={}&_sid={}"
