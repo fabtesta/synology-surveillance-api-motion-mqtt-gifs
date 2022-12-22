@@ -117,5 +117,5 @@ volumes:
 If you'd prefer to install dependencies yourself, you'll need:
 
 * ffmpeg 4.0 (other versions probably work, but that's what I tested with)
-* Python 3.7
+* Python 3.9
 * python libraries listed in `requirements.txt` (install via `pip install -r requirements.txt`)
