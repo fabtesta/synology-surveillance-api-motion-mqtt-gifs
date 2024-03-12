@@ -4,10 +4,10 @@
   "mqtt_user": "user",
   "mqtt_pwd": "password",
   "mqtt_base_topic": "synology/cameras/gifs",
+  "mqtt_gif_message_type": "localfile", #or base64
   "ffmpeg_working_folder": "./gifs",
   "synology_ip": "127.0.0.1",
   "synology_port": "5001",
-  "synology_base_api_url": "http://127.0.0.1/webapi/",
   "synology_user": "admin",
   "synology_password": "password123",
   "synology_cameras": [

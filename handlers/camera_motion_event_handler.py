@@ -1,10 +1,12 @@
+import base64
 import datetime
 import logging
-from pathlib import Path
 
 import paho.mqtt.client as mqtt
-from synology_api.surveillancestation import SurveillanceStation
+from PIL import Image
 from paho.mqtt.enums import CallbackAPIVersion
+from synology_api.surveillancestation import SurveillanceStation
+
 from services.syno_api import syno_camera_events, syno_recording_export
 from services.video_converter import convert_video_gif
 
@@ -21,21 +23,25 @@ class CameraMotionEventHandler:
         # events
         self.processed_events = processed_events
 
-    def publish_event(self, event):
-        event_file = Path(event.mp4_path)
-        gif = self.convert_gif(event_file)
-        if gif:
-            self.publish_mqtt_message(gif, self.camera_config['topic_name'])
+    def __gif_as_base64__(self, file_path):
+        with open(file_path, "rb") as f:
+            # Open the GIF file
+            img = Image.open(f)
+            # Convert the image to bytes
+            img_bytes = img.tobytes()
+            # Encode the bytes as base64
+            base64_data = base64.b64encode(img_bytes).decode("utf-8")
+        return base64_data
 
     def publish_mqtt_message(self, gif):
         logging.info('publish_mqtt_message gif %s mqtt_server %s mqtt_port %i mqtt_base_topic %s topic_name %s',
-                     self.config["mqtt_server"], self.config["mqtt_port"], self.config["mqtt_base_topic"],
+                     gif, self.config["mqtt_server"], self.config["mqtt_port"], self.config["mqtt_base_topic"],
                      self.camera_config["topic_name"])
 
         self.mqtt_client.connect(self.config["mqtt_server"],
                                  self.config["mqtt_port"])
         retcode = self.mqtt_client.publish(
-            self.config["mqtt_base_topic"] + "/" + self.camera["topic_name"], gif)
+            self.config["mqtt_base_topic"] + "/" + self.camera_config["topic_name"], gif)
         return retcode
 
     def poll_event(self):
@@ -65,7 +71,12 @@ class CameraMotionEventHandler:
                                                     self.camera_config["max_length_secs"],
                                                     mp4_file, outfile_gif)
                 if convert_retcode == 0:
-                    public_retcode = self.publish_mqtt_message('{}.gif'.format(camera_event['id']))
+                    gif = None
+                    if self.config['mqtt_gif_message_type'] == 'base64':
+                        gif = self.__gif_as_base64__(outfile_gif)
+                    else:
+                        gif = '{}.gif'.format(camera_event['id'])
+                    public_retcode = self.publish_mqtt_message(gif)
                     if public_retcode:
                         self.processed_events.append(camera_event['id'])
                         logging.info('Done processing event_id %i', camera_event['id'])
