@@ -4,3 +4,4 @@ gifs
 config-test.json
 config.json
 data
+__pycache__

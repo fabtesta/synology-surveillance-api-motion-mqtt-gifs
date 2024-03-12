@@ -1,2 +1,4 @@
-paho-mqtt==1.4.0
+paho-mqtt
 requests
+synology-api
+Pillow
