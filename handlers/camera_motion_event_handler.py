@@ -57,10 +57,10 @@ class CameraMotionEventHandler:
                              camera_event['filePath'])
                 if camera_event['id'] in self.processed_events:
                     logging.info('Event %s already processed', camera_event['id'])
-                    return None, None
+                    continue
                 if camera_event['cameraId'] != self.camera_config['id']:
                     logging.info('Event %s not for camera processed', self.camera_config['id'])
-                    return None, None
+                    continue
 
                 logging.info('Start downloading event video for event_id %s', camera_event['id'])
                 mp4_file = syno_recording_export(self.surveillance_station, self.config["ffmpeg_working_folder"],
