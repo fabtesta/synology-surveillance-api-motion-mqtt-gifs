@@ -14,10 +14,6 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def syno_info(param, sid):
-    pass
-
-
 def main():
     _, config_filename = sys.argv
     logging.info('Starting')
