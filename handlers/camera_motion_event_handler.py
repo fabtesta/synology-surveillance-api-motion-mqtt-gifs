@@ -1,6 +1,7 @@
 import base64
 import datetime
 import logging
+from typing import List
 
 import paho.mqtt.client as mqtt
 from PIL import Image
@@ -49,54 +50,69 @@ class CameraMotionEventHandler:
                      self.camera_config["topic_name"])
         now = datetime.datetime.now()
         today_midnight = datetime.datetime(now.year, now.month, now.day)
-        camera_events = syno_camera_events(self.surveillance_station, today_midnight)
-        if camera_events.__len__() > 0:
-            for camera_event in camera_events:
-                logging.info('camera %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'],
-                             camera_event['cameraName'],
-                             camera_event['filePath'])
-                if __check_already_processed_event_by_camera__(self.processed_events_conn, self.camera_config["id"],
-                                                               camera_event['id']):
-                    logging.info('Event %s already processed', camera_event['id'])
-                    continue
-                if camera_event['cameraId'] != self.camera_config['id']:
-                    logging.info('Event %s not for camera %s processed', camera_event['cameraId'], self.camera_config['id'])
-                    continue
+        camera_events = syno_camera_events(self.surveillance_station, self.camera_config['id'], today_midnight)
+        if camera_events.__len__() == 0:
+            logging.info('No event found for date %s', today_midnight.strftime("%Y-%m-%d"))
+            return
 
-                logging.info('Start downloading event video for event_id %s', camera_event['id'])
-                mp4_file = syno_recording_export(self.surveillance_station, self.config["ffmpeg_working_folder"],
-                                                 camera_event['id'])
-                outfile_gif = '{}/{}.gif'.format(self.config["ffmpeg_working_folder"], camera_event['id'])
-                convert_retcode = convert_video_gif(self.camera_config["scale"],
-                                                    self.camera_config["skip_first_n_secs"],
-                                                    self.camera_config["max_length_secs"],
-                                                    mp4_file, outfile_gif)
-                if convert_retcode == 0:
-                    gif = None
-                    if self.config['mqtt_gif_message_type'] == 'base64':
-                        gif = self.__gif_as_base64__(outfile_gif)
-                    else:
-                        gif = '{}.gif'.format(camera_event['id'])
-                    public_retcode = self.publish_mqtt_message(gif)
-                    if public_retcode:
-                        processed_event = (self.camera_config["id"], camera_event['id'], datetime.datetime.now())
-                        __replace_processed_events__(self.processed_events_conn, processed_event)
-                        logging.info('Done processing event_id %i', camera_event['id'])
-                    else:
-                        logging.error('Invalid return code from mqtt publish for event id %i camera topic %s',
-                                      camera_event['id'],
-                                      self.camera_config["topic_name"])
+        # camera_events_filtered = __get_camera_events_filtered__(camera_events, self.camera_config['id'])
+        # if camera_events_filtered.__len__() == 0:
+        #     logging.info('No event found for camera %s %s', self.camera_config["id"],
+        #                  self.camera_config["topic_name"])
+        #     return
+        camera_events_filtered = camera_events
+        logging.info('Found %s events for camera %s %s', camera_events_filtered.__len__(), self.camera_config["id"],
+                     self.camera_config["topic_name"])
+        for camera_event in camera_events_filtered:
+            logging.debug('Camera event %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'],
+                         camera_event['cameraName'],
+                         camera_event['filePath'])
+            if __check_already_processed_event_by_camera__(self.processed_events_conn, self.camera_config["id"],
+                                                           camera_event['id']):
+                logging.info('Event %s from camera %s already processed', camera_event['id'],
+                             camera_event['cameraId'])
+                continue
+
+            logging.info('Start downloading event video for event_id %s', camera_event['id'])
+            mp4_file = syno_recording_export(self.surveillance_station, self.config["ffmpeg_working_folder"],
+                                             camera_event['id'])
+            outfile_gif = '{}/{}.gif'.format(self.config["ffmpeg_working_folder"], camera_event['id'])
+            convert_retcode = convert_video_gif(self.camera_config["scale"],
+                                                self.camera_config["skip_first_n_secs"],
+                                                self.camera_config["max_length_secs"],
+                                                mp4_file, outfile_gif)
+            if convert_retcode == 0:
+                gif = None
+                if self.config['mqtt_gif_message_type'] == 'base64':
+                    gif = self.__gif_as_base64__(outfile_gif)
                 else:
-                    logging.error('Invalid return code from ffmpeg subprocess call for event id %i', camera_event['id'])
-        else:
-            logging.info('No event found for camera %s %s', self.camera_config["id"], self.camera_config["topic_name"])
+                    gif = '{}.gif'.format(camera_event['id'])
+                public_retcode = self.publish_mqtt_message(gif)
+                if public_retcode:
+                    processed_event = (self.camera_config["id"], camera_event['id'], datetime.datetime.now())
+                    __replace_processed_events__(self.processed_events_conn, processed_event)
+                    logging.info('Done processing event_id %i', camera_event['id'])
+                else:
+                    logging.error('Invalid return code from mqtt publish for event id %i camera topic %s',
+                                  camera_event['id'],
+                                  self.camera_config["topic_name"])
+            else:
+                logging.error('Invalid return code from ffmpeg subprocess call for event id %i', camera_event['id'])
 
 
-def __get_camera_config__(cameras_config, camera_id):
+def __get_camera_config__(cameras_config, camera_id) -> dict:
     for camera_config in cameras_config:
         if camera_config["id"] == camera_id:
             return camera_config
-    return None
+    return {}
+
+
+def __get_camera_events_filtered__(camera_events, camera_id) -> List[dict]:
+    camera_events_filtered: List[dict] = []
+    for camera_event in camera_events:
+        if camera_event["cameraId"] == camera_id:
+            camera_events_filtered.append(camera_event)
+    return camera_events_filtered
 
 
 def __check_already_processed_event_by_camera__(conn, camera_id, event_id):

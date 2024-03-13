@@ -17,19 +17,21 @@ def syno_login(ip, port, user, password) -> SurveillanceStation:
 def syno_cameras(ss: SurveillanceStation) -> List[dict]:
     cameras_response = ss.camera_list()
     cameras = cameras_response['data']['cameras']
-    logging.info('camera_list %s', json.dumps(cameras))
+    logging.debug('camera_list %s', json.dumps(cameras))
     for camera in cameras:
-        logging.info('camera %s - %s - %s - %s', camera['id'], camera['newName'], camera['model'], camera['vendor'])
+        logging.debug('camera %s - %s - %s - %s', camera['id'], camera['newName'], camera['model'], camera['vendor'])
     return cameras
 
 
-def syno_camera_events(ss: SurveillanceStation, from_time: datetime) -> List[dict]:
-    camera_events_response = ss.query_event_list_by_filter(limit=100, fromTime=int(from_time.timestamp()))
+def syno_camera_events(ss: SurveillanceStation, camera_id: str, from_time: datetime) -> List[dict]:
+    camera_events_response = ss.query_event_list_by_filter(limit=100, cameraIds=camera_id,
+                                                           fromTime=int(from_time.timestamp()))
     camera_events = camera_events_response['data']['recordings']
-    logging.info('camera_events %s since %s', json.dumps(camera_events), from_time.strftime('%Y-%m-%d %H:%M:%S'))
+    logging.debug('camera_events %s since %s', json.dumps(camera_events), from_time.strftime('%Y-%m-%d %H:%M:%S'))
     for camera_event in camera_events:
-        logging.info('camera %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'], camera_event['cameraName'],
-                     camera_event['filePath'])
+        logging.debug('camera %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'],
+                      camera_event['cameraName'],
+                      camera_event['filePath'])
     return camera_events
 
 
@@ -43,12 +45,12 @@ def syno_recording_export(ss: SurveillanceStation, download_dir: str, event_id: 
     return recording_export_file
 
 
-def __save_recording_to_file__(download_response: dict[str, object], download_dir: str, event_id: str) -> str:
+def __save_recording_to_file__(download_response: dict[str, object], download_dir: str, event_id: int) -> str:
     outfile_gif = '{}/{}.mp4'.format(download_dir, event_id)
 
     with open(outfile_gif, "wb") as f:
         logging.info('Downloading video for event id %i to %s .....', event_id, outfile_gif)
-        logging.info('download_response status_code %s', download_response.status_code)
+        logging.debug('download_response status_code %s', download_response.status_code)
 
         if download_response.ok:
             total_length = download_response.headers.get('content-length')
@@ -66,5 +68,6 @@ def __save_recording_to_file__(download_response: dict[str, object], download_di
                     sys.stdout.flush()
             logging.info('Downloading video for event id %i to %s .....DONE', event_id, outfile_gif)
             return outfile_gif
-
+        else:
+            logging.error('Downloading video for event id %i to %s ..... FAILED', event_id, outfile_gif)
     return ''

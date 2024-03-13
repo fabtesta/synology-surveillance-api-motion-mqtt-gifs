@@ -9,7 +9,7 @@ from handlers.camera_motion_event_handler import CameraMotionEventHandler
 from services.config import parse_config
 from services.syno_api import syno_cameras, syno_login
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -64,19 +64,17 @@ def main():
         logging.error('Error! cannot create the database connection.')
         return
 
-    logged_in = False
+    surveillance_station = syno_login(config["synology_ip"], config["synology_port"],
+                                      config["synology_user"],
+                                      config["synology_password"])
+    if surveillance_station is None:
+        logging.error('Synology credentials not valid')
+        exit(-1)
+
+    logging.info('Synology Auth ok %s', surveillance_station.session.sid)
     try:
         while True:
             time.sleep(10)
-            if not logged_in:
-                surveillance_station = syno_login(config["synology_ip"], config["synology_port"],
-                                                  config["synology_user"],
-                                                  config["synology_password"])
-                if surveillance_station is None:
-                    logging.error('Synology credentials not valid')
-                    continue
-            logged_in = True
-            logging.info('Synology Auth ok %s', surveillance_station.session.sid)
             cameras = syno_cameras(surveillance_station)
             for camera in cameras:
                 logging.info('CameraMotionEventHandler  poll_event %s %s %s %s %s', camera['id'],
@@ -86,7 +84,6 @@ def main():
                                                           config, surveillance_station)
 
                 camera_handler.poll_event()
-
 
     except KeyboardInterrupt:
         logging.info('KeyboardInterrupt')
