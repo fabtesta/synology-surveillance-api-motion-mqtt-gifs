@@ -36,7 +36,7 @@ class TestSynoApi(TestCase):
         self.assertEqual(cameras.__len__(), 5)
 
     def test_syno_camera_events(self):
-        events = syno_camera_events(self.ss, datetime.datetime(2024, 3, 12))
+        events = syno_camera_events(self.ss, '2', datetime.datetime(2024, 3, 12))
         self.assertIsNotNone(events)
         self.assertEqual(events.__len__(), 100)
 
