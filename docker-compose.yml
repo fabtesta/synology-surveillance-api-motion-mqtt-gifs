@@ -1,0 +1,12 @@
+version: '3'
+services:
+  synology-surveillance-api-motion-mqtt-gifs:
+    image: fabtesta/synology-surveillance-api-motion-mqtt-gifs:latest
+    volumes:
+      - ./:/config
+      - syno_data:/data
+      - ./gifs:/gifs
+    restart: unless-stopped
+
+volumes:
+  syno_data:

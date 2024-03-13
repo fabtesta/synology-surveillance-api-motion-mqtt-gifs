@@ -1,7 +1,7 @@
 .idea
 venv
 gifs
-__pycache__
 config-test.json
 config.json
-processed_events.db
+data
+__pycache__

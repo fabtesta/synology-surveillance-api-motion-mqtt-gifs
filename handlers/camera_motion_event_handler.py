@@ -12,7 +12,7 @@ from services.video_converter import convert_video_gif
 
 
 class CameraMotionEventHandler:
-    def __init__(self, processed_events, camera, config, surveillance_station: SurveillanceStation):
+    def __init__(self, processed_events_conn, camera, config, surveillance_station: SurveillanceStation):
         self.camera = camera
         self.config = config
         self.camera_config = __get_camera_config__(self.config['synology_cameras'], self.camera['id'])
@@ -21,7 +21,7 @@ class CameraMotionEventHandler:
         self.mqtt_client.username_pw_set(username=self.config["mqtt_user"], password=self.config["mqtt_pwd"])
         # Keep a FIFO of files processed so we can guard against duplicate
         # events
-        self.processed_events = processed_events
+        self.processed_events_conn = processed_events_conn
 
     def __gif_as_base64__(self, file_path):
         with open(file_path, "rb") as f:
@@ -55,11 +55,12 @@ class CameraMotionEventHandler:
                 logging.info('camera %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'],
                              camera_event['cameraName'],
                              camera_event['filePath'])
-                if camera_event['id'] in self.processed_events:
+                if __check_already_processed_event_by_camera__(self.processed_events_conn, self.camera_config["id"],
+                                                               camera_event['id']):
                     logging.info('Event %s already processed', camera_event['id'])
                     continue
                 if camera_event['cameraId'] != self.camera_config['id']:
-                    logging.info('Event %s not for camera processed', self.camera_config['id'])
+                    logging.info('Event %s not for camera %s processed', camera_event['cameraId'], self.camera_config['id'])
                     continue
 
                 logging.info('Start downloading event video for event_id %s', camera_event['id'])
@@ -78,7 +79,8 @@ class CameraMotionEventHandler:
                         gif = '{}.gif'.format(camera_event['id'])
                     public_retcode = self.publish_mqtt_message(gif)
                     if public_retcode:
-                        self.processed_events.append(camera_event['id'])
+                        processed_event = (self.camera_config["id"], camera_event['id'], datetime.datetime.now())
+                        __replace_processed_events__(self.processed_events_conn, processed_event)
                         logging.info('Done processing event_id %i', camera_event['id'])
                     else:
                         logging.error('Invalid return code from mqtt publish for event id %i camera topic %s',
@@ -95,3 +97,27 @@ def __get_camera_config__(cameras_config, camera_id):
         if camera_config["id"] == camera_id:
             return camera_config
     return None
+
+
+def __check_already_processed_event_by_camera__(conn, camera_id, event_id):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM processed_events WHERE camera_id=? AND last_event_id >=?", (camera_id, event_id))
+
+    rows = cur.fetchall()
+
+    already_processed = False
+    for row in rows:
+        logging.error("Event %s already processed %s", event_id, row)
+        already_processed = True
+
+    return already_processed
+
+
+def __replace_processed_events__(conn, processed_event):
+    sql = ''' REPLACE INTO processed_events(camera_id, last_event_id ,processed_date)
+              VALUES(?,?,?) '''
+    cur = conn.cursor()
+    cur.execute(sql, processed_event)
+
+    conn.commit()
+    return cur.lastrowid

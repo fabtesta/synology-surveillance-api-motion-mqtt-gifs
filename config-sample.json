@@ -1,4 +1,5 @@
 {
+  "data_folder": "./data",
   "mqtt_server": "broker.shiftr.io",
   "mqtt_port": 1883,
   "mqtt_user": "user",
