@@ -1,46 +1,18 @@
 #!/usr/bin/env python3
 import logging
-import sqlite3
 import sys
 import time
-from sqlite3 import Error
 
 from handlers.camera_motion_event_handler import CameraMotionEventHandler
-from services.config import parse_config
+from model.CameraConfig import CameraConfig
+from services.config_utils import parse_config, get_camera_config
+from services.db_utils import create_connection, create_processed_events_table
+from services.mqtt_producer import MqttProducer
 from services.syno_api import syno_cameras, syno_login
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
-
-sql_create_processed_events_table = """ CREATE TABLE IF NOT EXISTS processed_events (
-                                        id integer PRIMARY KEY,
-                                        camera_id text NOT NULL,
-                                        last_event_id int NOT NULL,
-                                        processed_date timestamp NOT NULL
-                                    ); """
-
-sql_create_processed_events_table_unique = """ CREATE UNIQUE INDEX IF NOT EXISTS idx_processed_events_camera ON processed_events (camera_id); """
-
-
-def create_connection(data_folder):
-    try:
-        conn = sqlite3.connect(data_folder + '/processed_events.db')
-        print(sqlite3.version)
-        return conn
-    except Error as e:
-        logging.error("CANNOT CREATE DB", e)
-
-    return None
-
-
-def create_processed_events_table(conn):
-    try:
-        c = conn.cursor()
-        c.execute(sql_create_processed_events_table)
-        c.execute(sql_create_processed_events_table_unique)
-    except Error as e:
-        logging.error("CANNOT CREATE TABLE", e)
 
 
 def main():
@@ -48,6 +20,7 @@ def main():
     logging.info('Starting')
     logging.info('Parsing %s', config_filename)
     config = parse_config(config_filename)
+    logging.info('Polling every %s seconds', config['polling_time'])
 
     config_data_folder = ''
     if 'data_folder' in config:
@@ -72,18 +45,28 @@ def main():
         exit(-1)
 
     logging.info('Synology Auth ok %s', surveillance_station.session.sid)
+    mqtt_producer = MqttProducer(config=config)
     try:
         while True:
-            time.sleep(10)
+            time.sleep(int(config['polling_time']))
             cameras = syno_cameras(surveillance_station)
             for camera in cameras:
                 logging.info('CameraMotionEventHandler  poll_event %s %s %s %s %s', camera['id'],
                              camera['newName'],
                              camera['model'], camera['vendor'], camera['ip'])
+                camera_config: CameraConfig = get_camera_config(config['synology_cameras'],
+                                                                camera['id'])
                 camera_handler = CameraMotionEventHandler(processed_events_conn, camera,
-                                                          config, surveillance_station)
+                                                          camera_config=camera_config, mqtt_producer=mqtt_producer,
+                                                          surveillance_station=surveillance_station,
+                                                          working_folder=config["ffmpeg_working_folder"])
 
-                camera_handler.poll_event()
+                if camera_config is None:
+                    continue
+                if camera_config.mode.lower() == 'gif':
+                    camera_handler.poll_event()
+                elif camera_config.mode.lower() == 'snap':
+                    camera_handler.snap_camera()
 
     except KeyboardInterrupt:
         logging.info('KeyboardInterrupt')

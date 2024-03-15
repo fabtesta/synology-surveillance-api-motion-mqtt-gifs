@@ -20,20 +20,20 @@ class MqttProducer:
         with open(filename, "wb") as image_file:
             image_file.write(base64.b64decode(encoded_string))
 
-    def publish_gif_message(self, message_type: str, gif_name: str, gif_path: str, topic: str):
+    def publish_file_message(self, message_type: str, file_name: str, file_path: str, topic: str):
         logging.info(
             'publish_mqtt_message type %s gif %s gif path %s mqtt_server %s mqtt_port %i mqtt_base_topic %s topic_name %s',
-            message_type, gif_name, gif_path, self.config["mqtt_server"], self.config["mqtt_port"],
+            message_type, file_name, file_path, self.config["mqtt_server"], self.config["mqtt_port"],
             self.config["mqtt_base_topic"],
             topic)
-        gif_message = None
+        file_message = None
         if message_type == 'base64':
-            gif_message = self.__encode_to_base64__(gif_path)
+            file_message = self.__encode_to_base64__(file_path)
         else:
-            gif_message = gif_name
+            file_message = file_name
 
         self.mqtt_client.connect(self.config["mqtt_server"],
                                  self.config["mqtt_port"])
         retcode = self.mqtt_client.publish(
-            self.config["mqtt_base_topic"] + "/" + topic, gif_message)
+            self.config["mqtt_base_topic"] + "/" + topic, file_message)
         return retcode

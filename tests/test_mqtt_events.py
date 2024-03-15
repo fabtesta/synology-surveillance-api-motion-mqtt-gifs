@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, create_autospec
 import paho.mqtt.client as mqtt
 from paho import mqtt
 
-from services.config import parse_config
+from services.config_utils import parse_config
 from services.mqtt_producer import MqttProducer
 
 logging.basicConfig(level=logging.DEBUG,

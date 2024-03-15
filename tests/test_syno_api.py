@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from synology_api.surveillancestation import SurveillanceStation
 
-from services.config import parse_config
+from services.config_utils import parse_config
 from services.syno_api import syno_login, syno_cameras, syno_camera_events, syno_recording_export, syno_camera_snapshot
 
 logging.basicConfig(level=logging.DEBUG,
