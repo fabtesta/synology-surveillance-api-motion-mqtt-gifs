@@ -29,6 +29,7 @@ For example:
 ```json
 {
   "data_folder": "./data", // <-- Leave it empty if you are using docker image or set the bind mount to volume /data
+  "polling_time": 60,
   "mqtt_server": "broker.shiftr.io",
   "mqtt_port": 1883,
   "mqtt_user": "user",
@@ -73,6 +74,7 @@ For example:
 
 ```
 * `data_folder`: Path where to stored sqlite db for already processed events (preserve state across restarts). Leave empty if using docker image.
+* `polling_time`: Polling cycle in seconds
 * `mqtt_server`: MQTT server to publish notifications to
 * `mqtt_port`: Port of MQTT server
 * `mqtt_user`: Username of MQTT server
