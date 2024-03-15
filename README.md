@@ -1,12 +1,23 @@
 # synology-surveillance-api-motion-mqtt-gifs
-A python script to create animated gifs from videos recorded by cameras attached to Synology Surveillance Station inspired by similar project for [Ubiquiti Unifi camers](https://github.com/selfhostedhome/unifi-video-gif-mqtt) [(blog)](https://selfhostedhome.com/unifi-video-motion-detection-gif-notifications)
+A python script to create animated gifs and snapshots from videos recorded by cameras attached to Synology Surveillance Station inspired by similar project for [Ubiquiti Unifi camers](https://github.com/selfhostedhome/unifi-video-gif-mqtt) [(blog)](https://selfhostedhome.com/unifi-video-motion-detection-gif-notifications)
 
-Supports [Synology Surveillance APIs version 2](https://global.download.synology.com/download/Document/DeveloperGuide/Surveillance_Station_Web_API_v2.0.pdf).
+_Status_\
+![maintained - yes](https://img.shields.io/badge/maintained-yes-blue)
+
+_New version_\
+[![v 3.0.0 - breaking changes](https://img.shields.io/badge/v_3.0.0-breaking_changes-important)](https://github.com/N4S4/synology-api)
+
+_Many thanks to N4S4 and Synology API wrapper library_\
+[![please star - synology-api](https://img.shields.io/badge/please_star-synology--api-2ea44f)](https://github.com/N4S4/synology-api)
+
+Supports [Synology DSM APIs version 7](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Os/DSM/All/enu/DSM_Login_Web_API_Guide_enu.pdf)\
+Supports [Synology Surveillance APIs version 2](https://global.download.synology.com/download/Document/Software/DeveloperGuide/Package/SurveillanceStation/All/enu/Surveillance_Station_Web_API.pdf)
 
 Supports multiple cameras polling and ffmpeg parameters
 Remembers already processed events across restarts.
 
-## This docker image has passed 10k downloads on Docker Hub!
+
+## This docker image has passed 30k downloads on Docker Hub!
 <a href="https://www.buymeacoffee.com/fabtesta" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/lato-blue.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
 
 ## Config File
@@ -17,30 +28,45 @@ For example:
 
 ```json
 {
-  "data_folder": "./data", // <-- Leave it empty if you are using docker image
+  "data_folder": "./data", // <-- Leave it empty if you are using docker image or set the bind mount to volume /data
   "mqtt_server": "broker.shiftr.io",
   "mqtt_port": 1883,
   "mqtt_user": "user",
   "mqtt_pwd": "password",
   "mqtt_base_topic": "synology/cameras/gifs",
-  "ffmpeg_working_folder": "./gifs",
-  "synology_base_api_url": "http://127.0.0.1",
+  "ffmpeg_working_folder": "./gifs", // <-- Leave it empty if you are using docker image or set the bind mount to volume /gifs
+  "synology_ip": "127.0.0.1",
+  "synology_port": "5001",
   "synology_user": "admin",
   "synology_password": "password123",
   "synology_cameras": [
     {
-      "id": 1, 
-      "skip_first_n_secs": 5, //<-- Skip seconds recorded before motion event is triggered
-      "max_length_secs": 5, //<-- Do not create gif for video full length but only with first n seconds
-      "scale": 320, //<-- Determine quality and size of the output gif
-      "topic_name": "camera_1" //<-- Configurable camera topic name
+      //CAMERA GIF TO LOCAL FILE
+      "id": 1,
+      "mqtt_message_type": "localfile", // <-- or base64 if you want to publish the file encode to base64
+      "mode": "gif", // <-- or snapshot if you want to snap a frame from the motion event
+      "skip_first_n_secs": 5,
+      "max_length_secs": 5,
+      "scale": 320,
+      "topic_name": "camera_1"
     },
     {
+      //CAMERA GIF TO BASE64
       "id": 2,
+      "mqtt_message_type": "base64", // <-- or localfile if you want to publish the file name saved under 'ffmpeg_working_folder'
+      "mode": "gif", // <-- or snapshot if you want to snap a frame from the motion event
       "skip_first_n_secs": 7,
       "max_length_secs": 10,
       "scale": 640,
       "topic_name": "camera_2"
+    },
+    {
+      //CAMERA SNAP ONLY TO BASE64
+      "id": 3,
+      "mqtt_message_type": "base64", // <-- or localfile if you want to publish the file name saved under 'ffmpeg_working_folder'
+      "mode": "snap",
+      "scale": 640,
+      "topic_name": "camera_3"
     }
   ]
 }
@@ -53,14 +79,26 @@ For example:
 * `mqtt_pwd`: Password of MQTT server
 * `mqtt_base_topic`: MQTT topic to publish new GIFs to.
 * `ffmpeg_working_folder`: Working folder for downloaded mp4 videos and created GIFs
-* `synology_base_api_url`: Base url of Synology Surveillance Station APIs
+* `synology_ip`: Host IP where Synology Surveillance Station APIs are exposed
+* `synology_port`: Host port where Synology Surveillance Station APIs are exposed
 * `synology_user`: User to access Synology Surveillance Station APIs
 * `synology_password`: User's password to access Synology Surveillance Station APIs
 * `synology_cameras`: Array of cameras for events polling
     * `id`: Synology Surveillance Station camera id
+    * `mqtt_message_type`:
+      * `localfile`: publish the file name saved under 'ffmpeg_working_folder'
+      * `base64`: publish the file encoded to base64
+      
+    * `mode`:
+      * `gif`: exports the video event and converts it in a gif with the following options:
+        * `skip_first_n_secs`
+        * `max_length_secs`
+        * `scale`
+      * `snap`: publish the file encoded to base64 with the following options:
+        * `scale`
     * `skip_first_n_secs`: Skip seconds recorded before motion event is triggered
     * `max_length_secs`: Do not create gif for video full length but only with first n seconds
-    * `scale`: Determine quality and size of the output gif
+    * `scale`: Determine quality and size of the output gif/snap
     * `topic_name`: Configurable camera topic name that will be appended to the end of this base topic
 
 If you don't know camera ids, leave cameras section empty and you'll get ids printed at first run
@@ -116,6 +154,6 @@ volumes:
 
 If you'd prefer to install dependencies yourself, you'll need:
 
-* ffmpeg 4.0 (other versions probably work, but that's what I tested with)
+* ffmpeg 4.4 (other versions probably work, but that's what I tested with)
 * Python 3.9
 * python libraries listed in `requirements.txt` (install via `pip install -r requirements.txt`)

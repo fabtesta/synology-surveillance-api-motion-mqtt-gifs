@@ -3,6 +3,7 @@ import logging
 from typing import List
 from synology_api.surveillancestation import SurveillanceStation
 
+from model.CameraConfig import CameraConfig
 from services.mqtt_producer import MqttProducer
 from services.syno_api import syno_camera_events, syno_recording_export
 from services.video_converter import convert_video_gif
@@ -12,7 +13,7 @@ class CameraMotionEventHandler:
     def __init__(self, processed_events_conn, camera, config, surveillance_station: SurveillanceStation):
         self.camera = camera
         self.config = config
-        self.camera_config = __get_camera_config__(self.config['synology_cameras'], self.camera['id'])
+        self.camera_config: CameraConfig = __get_camera_config__(self.config['synology_cameras'], self.camera['id'])
         self.surveillance_station = surveillance_station
         self.mqtt_producer = MqttProducer(config=self.config)
         # Keep a FIFO of files processed so we can guard against duplicate
@@ -20,23 +21,23 @@ class CameraMotionEventHandler:
         self.processed_events_conn = processed_events_conn
 
     def poll_event(self):
-        logging.info('Start getting last camera event for camera %s %s', self.camera_config["id"],
-                     self.camera_config["topic_name"])
+        logging.info('Start getting last camera event for camera %s %s', self.camera_config.id,
+                     self.camera_config.topic_name)
         now = datetime.datetime.now()
         today_midnight = datetime.datetime(now.year, now.month, now.day)
-        camera_events = syno_camera_events(self.surveillance_station, self.camera_config['id'], today_midnight)
+        camera_events = syno_camera_events(self.surveillance_station, self.camera_config.id, today_midnight)
         if camera_events.__len__() == 0:
             logging.info('No event found for date %s', today_midnight.strftime("%Y-%m-%d"))
             return
 
         camera_events_filtered = camera_events
-        logging.info('Found %s events for camera %s %s', camera_events_filtered.__len__(), self.camera_config["id"],
-                     self.camera_config["topic_name"])
+        logging.info('Found %s events for camera %s %s', camera_events_filtered.__len__(), self.camera_config.id,
+                     self.camera_config.topic_name)
         for camera_event in camera_events_filtered:
             logging.debug('Camera event %s - %s - %s - %s', camera_event['id'], camera_event['cameraId'],
                           camera_event['cameraName'],
                           camera_event['filePath'])
-            if __check_already_processed_event_by_camera__(self.processed_events_conn, self.camera_config["id"],
+            if __check_already_processed_event_by_camera__(self.processed_events_conn, self.camera_config.id,
                                                            camera_event['id']):
                 logging.info('Event %s from camera %s already processed', camera_event['id'],
                              camera_event['cameraId'])
@@ -46,31 +47,31 @@ class CameraMotionEventHandler:
             mp4_file = syno_recording_export(self.surveillance_station, self.config["ffmpeg_working_folder"],
                                              camera_event['id'])
             outfile_gif = '{}/{}.gif'.format(self.config["ffmpeg_working_folder"], camera_event['id'])
-            convert_retcode = convert_video_gif(self.camera_config["scale"],
-                                                self.camera_config["skip_first_n_secs"],
-                                                self.camera_config["max_length_secs"],
+            convert_retcode = convert_video_gif(self.camera_config.scale,
+                                                self.camera_config.skip_first_n_secs,
+                                                self.camera_config.max_length_secs,
                                                 mp4_file, outfile_gif)
             if convert_retcode == 0:
                 public_retcode = self.mqtt_producer.publish_gif_message(self.config['mqtt_gif_message_type'],
                                                                         '{}.gif'.format(camera_event['id']),
-                                                                        outfile_gif, self.camera_config["topic_name"])
+                                                                        outfile_gif, self.camera_config.topic_name)
                 if public_retcode:
-                    processed_event = (self.camera_config["id"], camera_event['id'], datetime.datetime.now())
+                    processed_event = (self.camera_config.id, camera_event['id'], datetime.datetime.now())
                     __replace_processed_events__(self.processed_events_conn, processed_event)
                     logging.info('Done processing event_id %i', camera_event['id'])
                 else:
                     logging.error('Invalid return code from mqtt publish for event id %i camera topic %s',
                                   camera_event['id'],
-                                  self.camera_config["topic_name"])
+                                  self.camera_config.topic_name)
             else:
                 logging.error('Invalid return code from ffmpeg subprocess call for event id %i', camera_event['id'])
 
 
-def __get_camera_config__(cameras_config, camera_id) -> dict:
+def __get_camera_config__(cameras_config, camera_id) -> CameraConfig:
     for camera_config in cameras_config:
         if camera_config["id"] == camera_id:
-            return camera_config
-    return {}
+            return CameraConfig(**camera_config)
+    return None
 
 
 def __get_camera_events_filtered__(camera_events, camera_id) -> List[dict]:

@@ -1,3 +1,4 @@
+import logging
 import os
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec
@@ -7,6 +8,10 @@ from paho import mqtt
 
 from services.config import parse_config
 from services.mqtt_producer import MqttProducer
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 # Define the function that will be tested

@@ -5,7 +5,6 @@
   "mqtt_user": "user",
   "mqtt_pwd": "password",
   "mqtt_base_topic": "synology/cameras/gifs",
-  "mqtt_gif_message_type": "localfile", #or base64
   "ffmpeg_working_folder": "./gifs",
   "synology_ip": "127.0.0.1",
   "synology_port": "5001",
@@ -14,6 +13,8 @@
   "synology_cameras": [
     {
       "id": 1,
+      "mqtt_message_type": "localfile",
+      "mode": "gif",
       "skip_first_n_secs": 5,
       "max_length_secs": 5,
       "scale": 320,
@@ -21,10 +22,19 @@
     },
     {
       "id": 2,
+      "mqtt_message_type": "localfile",
+      "mode": "gif",
       "skip_first_n_secs": 7,
       "max_length_secs": 10,
       "scale": 640,
       "topic_name": "camera_2"
+    },
+    {
+      "id": 3,
+      "mqtt_message_type": "base64",
+      "mode": "snap",
+      "scale": 640,
+      "topic_name": "camera_3"
     }
   ]
 }

@@ -23,8 +23,8 @@ def syno_cameras(ss: SurveillanceStation) -> List[dict]:
     return cameras
 
 
-def syno_camera_events(ss: SurveillanceStation, camera_id: str, from_time: datetime) -> List[dict]:
-    camera_events_response = ss.query_event_list_by_filter(limit=100, cameraIds=camera_id,
+def syno_camera_events(ss: SurveillanceStation, camera_id: int, from_time: datetime) -> List[dict]:
+    camera_events_response = ss.query_event_list_by_filter(limit=100, cameraIds=f'{camera_id}',
                                                            fromTime=int(from_time.timestamp()))
     camera_events = camera_events_response['data']['recordings']
     logging.debug('camera_events %s since %s', json.dumps(camera_events), from_time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -43,6 +43,16 @@ def syno_recording_export(ss: SurveillanceStation, download_dir: str, event_id: 
 
     logging.info('recording_export %s', recording_export_file)
     return recording_export_file
+
+
+def syno_camera_snapshot(ss: SurveillanceStation, download_dir: str, camera_id: int, snapshot_size: int = None) -> str:
+    camera_snapshot_content = ss.get_snapshot(id=camera_id)
+    camera_snapshot_file = __save_snapshot_to_file__(download_content=camera_snapshot_content,
+                                                     download_dir=download_dir,
+                                                     camera_id=camera_id)
+
+    logging.info('camera_snapshot_file %s', camera_snapshot_file)
+    return camera_snapshot_file
 
 
 def __save_recording_to_file__(download_response: dict[str, object], download_dir: str, event_id: int) -> str:
@@ -71,3 +81,14 @@ def __save_recording_to_file__(download_response: dict[str, object], download_di
         else:
             logging.error('Downloading video for event id %i to %s ..... FAILED', event_id, outfile_gif)
     return ''
+
+
+def __save_snapshot_to_file__(download_content: bytes, download_dir: str, camera_id: int) -> str:
+    # outfile_jpg = '{}/{}-{}.jpg'.format(download_dir, camera_id, int(datetime.now().timestamp()))
+    outfile_jpg = '{}/{}.jpg'.format(download_dir, camera_id)
+
+    with open(outfile_jpg, "wb") as f:
+        logging.info('Downloading snapshot for camera id %i to %s .....', camera_id, outfile_jpg)
+        f.write(download_content)
+        logging.info('Downloading snapshot for camera id %i to %s .....DONE', camera_id, outfile_jpg)
+    return outfile_jpg

@@ -3,5 +3,6 @@ venv
 gifs
 config-test.json
 config.json
+config-snap.json
 data
 __pycache__

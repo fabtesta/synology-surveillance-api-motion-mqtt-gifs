@@ -1,11 +1,15 @@
-import configparser
 import datetime
+import logging
 from unittest import TestCase
 
 from synology_api.surveillancestation import SurveillanceStation
 
 from services.config import parse_config
-from services.syno_api import syno_login, syno_cameras, syno_camera_events, syno_recording_export
+from services.syno_api import syno_login, syno_cameras, syno_camera_events, syno_recording_export, syno_camera_snapshot
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 class TestSynoApi(TestCase):
@@ -44,3 +48,8 @@ class TestSynoApi(TestCase):
         recording = syno_recording_export(self.ss, self.config["ffmpeg_working_folder"], 738562)
         self.assertIsNotNone(recording)
         self.assertEqual(recording, './resources/gifs/738562.mp4')
+
+    def test_syno_camera_snapshot(self):
+        snapshot = syno_camera_snapshot(self.ss, self.config["ffmpeg_working_folder"], 2, 640)
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot, './resources/gifs/2.jpg')
