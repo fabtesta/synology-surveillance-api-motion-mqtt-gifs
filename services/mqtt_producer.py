@@ -28,12 +28,12 @@ class MqttProducer:
             topic)
         gif_message = None
         if message_type == 'base64':
-            gif_message = self.__gif_as_base64__(gif_path)
+            gif_message = self.__encode_to_base64__(gif_path)
         else:
             gif_message = gif_name
 
         self.mqtt_client.connect(self.config["mqtt_server"],
                                  self.config["mqtt_port"])
         retcode = self.mqtt_client.publish(
-            self.config["mqtt_base_topic"] + "/" + self.camera_config["topic_name"], gif_message)
+            self.config["mqtt_base_topic"] + "/" + topic, gif_message)
         return retcode
