@@ -2,6 +2,7 @@
 FROM python:3.9.13-alpine
 
 WORKDIR /app
+ADD ./model ./model
 ADD ./handlers ./handlers
 ADD ./services ./services
 ADD synology_surveillance_motion_mqtt_gifs.py .
